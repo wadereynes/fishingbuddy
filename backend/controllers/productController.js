@@ -1,10 +1,13 @@
 import asyncHandler from 'express-async-handler'
 import Product from '../models/productModel.js'
 
-// @desc Fetch all products
-// @route GET /api/products
-// @access Public
+// @desc    Fetch all products
+// @route   GET /api/products
+// @access  Public
 const getProducts = asyncHandler(async (req, res) => {
+  const pageSize = 10
+  const page = Number(req.query.pageNumber) || 1
+
   const keyword = req.query.keyword
     ? {
         name: {
@@ -14,14 +17,17 @@ const getProducts = asyncHandler(async (req, res) => {
       }
     : {}
 
+  const count = await Product.countDocuments({ ...keyword })
   const products = await Product.find({ ...keyword })
+    .limit(pageSize)
+    .skip(pageSize * (page - 1))
 
-  res.json(products)
+  res.json({ products, page, pages: Math.ceil(count / pageSize) })
 })
 
-// @desc Fetch single product
-// @route GET /api/products/:id
-// @access Public
+// @desc    Fetch single product
+// @route   GET /api/products/:id
+// @access  Public
 const getProductById = asyncHandler(async (req, res) => {
   const product = await Product.findById(req.params.id)
 
@@ -33,9 +39,9 @@ const getProductById = asyncHandler(async (req, res) => {
   }
 })
 
-// @desc Delete a product
-// @route DELETE /api/products/:id
-// @access Private/Admin
+// @desc    Delete a product
+// @route   DELETE /api/products/:id
+// @access  Private/Admin
 const deleteProduct = asyncHandler(async (req, res) => {
   const product = await Product.findById(req.params.id)
 
@@ -48,9 +54,9 @@ const deleteProduct = asyncHandler(async (req, res) => {
   }
 })
 
-// @desc Create a product
-// @route POST /api/products
-// @access Private/Admin
+// @desc    Create a product
+// @route   POST /api/products
+// @access  Private/Admin
 const createProduct = asyncHandler(async (req, res) => {
   const product = new Product({
     name: 'Sample name',
@@ -58,7 +64,7 @@ const createProduct = asyncHandler(async (req, res) => {
     user: req.user._id,
     image: '/images/sample.jpg',
     brand: 'Sample brand',
-    category: 'Sample Category',
+    category: 'Sample category',
     countInStock: 0,
     numReviews: 0,
     description: 'Sample description',
@@ -68,9 +74,9 @@ const createProduct = asyncHandler(async (req, res) => {
   res.status(201).json(createdProduct)
 })
 
-// @desc Update a product
-// @route PUT /api/products/:id
-// @access Private/Admin
+// @desc    Update a product
+// @route   PUT /api/products/:id
+// @access  Private/Admin
 const updateProduct = asyncHandler(async (req, res) => {
   const {
     name,
@@ -101,9 +107,9 @@ const updateProduct = asyncHandler(async (req, res) => {
   }
 })
 
-// @desc Create new review
-// @route POST /api/products/:id/reviews
-// @access Private
+// @desc    Create new review
+// @route   POST /api/products/:id/reviews
+// @access  Private
 const createProductReview = asyncHandler(async (req, res) => {
   const { rating, comment } = req.body
 
